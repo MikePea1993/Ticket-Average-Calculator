@@ -37,47 +37,70 @@ document.getElementById("calculateBtn").addEventListener("click", function () {
   const endTime = new Date(endDate);
   endTime.setHours(21, 0, 0, 0);
 
+  // Check if this is a historical audit
+  const isHistorical = endTime < currentDate;
   const STANDARD_MONTH_DAYS = 30;
-  const adjustedMonthDays = STANDARD_MONTH_DAYS - loa; // Total working days in the month
 
-  // Calculate current average based on adjusted days
-  const average = tickets / adjustedMonthDays;
-  const [zoneClass, zoneName] = getPerformanceZone(average);
+  if (isHistorical) {
+    // For historical audits, only show the monthly average
+    const adjustedDays = STANDARD_MONTH_DAYS - loa;
+    const average = tickets / adjustedDays;
+    const [zoneClass, zoneName] = getPerformanceZone(average);
 
-  // Calculate targets based on adjusted month days
-  const target3 = 3 * adjustedMonthDays;
-  const target4_2 = 4.2 * adjustedMonthDays;
-  const target5 = 5 * adjustedMonthDays;
+    let output = `<h3>Results for ${name}</h3>`;
+    output += `<p class="${zoneClass}">Monthly Average: ${average.toFixed(
+      2
+    )} tickets/day (${zoneName} Zone)</p>`;
 
-  // Calculate if targets are actually secured based on total tickets needed
-  const secured3 = tickets >= target3;
-  const secured4_2 = tickets >= target4_2;
-  const secured5 = tickets >= target5;
+    document.getElementById("result").innerHTML = output;
+  } else {
+    // For current period, calculate days elapsed since start
+    const daysUntilNow = Math.max(
+      1,
+      Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24))
+    );
+    const workingDays = Math.max(1, daysUntilNow - loa);
+    const remainingDays = Math.max(1, STANDARD_MONTH_DAYS - daysUntilNow);
 
-  // Calculate remaining tickets needed
-  const remaining3 = Math.max(0, target3 - tickets);
-  const remaining4_2 = Math.max(0, target4_2 - tickets);
-  const remaining5 = Math.max(0, target5 - tickets);
+    // Calculate current average based on working days so far
+    const average = tickets / workingDays;
+    const [zoneClass, zoneName] = getPerformanceZone(average);
 
-  let output = `<h3>Results for ${name}</h3>`;
-  output += `<p class="${zoneClass}">Current Average: ${average.toFixed(
-    2
-  )} tickets/day (${zoneName} Zone)</p>`;
-  output += `<p>3.0 average: ${
-    secured3
-      ? `✅ Secured!`
-      : `❌ Need ${remaining3.toFixed(2)} tickets to reach`
-  }</p>`;
-  output += `<p>4.2 average: ${
-    secured4_2
-      ? `✅ Secured!`
-      : `❌ Need ${remaining4_2.toFixed(2)} tickets to reach`
-  }</p>`;
-  output += `<p>5.0 average: ${
-    secured5
-      ? `✅ Secured!`
-      : `❌ Need ${remaining5.toFixed(2)} tickets to reach`
-  }</p>`;
+    // Calculate total tickets needed for whole month
+    const target3 = 3 * (STANDARD_MONTH_DAYS - loa);
+    const target4_2 = 4.2 * (STANDARD_MONTH_DAYS - loa);
+    const target5 = 5 * (STANDARD_MONTH_DAYS - loa);
 
-  document.getElementById("result").innerHTML = output;
+    // Calculate remaining tickets needed
+    const remaining3 = Math.ceil(target3 - tickets);
+    const remaining4_2 = Math.ceil(target4_2 - tickets);
+    const remaining5 = Math.ceil(target5 - tickets);
+
+    // Calculate tickets per day needed
+    const perDay3 = Math.ceil(remaining3 / remainingDays);
+    const perDay4_2 = Math.ceil(remaining4_2 / remainingDays);
+    const perDay5 = Math.ceil(remaining5 / remainingDays);
+
+    let output = `<h3>Results for ${name}</h3>`;
+    output += `<p class="${zoneClass}">Current Average: ${average.toFixed(
+      2
+    )} tickets/day (${zoneName} Zone)</p>`;
+    output += `<p>3.0 average: ${
+      tickets >= target3
+        ? `✅ Secured!`
+        : `❌ Need ${remaining3} tickets (${perDay3} per day) to reach`
+    }</p>`;
+    output += `<p>4.2 average: ${
+      tickets >= target4_2
+        ? `✅ Secured!`
+        : `❌ Need ${remaining4_2} tickets (${perDay4_2} per day) to reach`
+    }</p>`;
+    output += `<p>5.0 average: ${
+      tickets >= target5
+        ? `✅ Secured!`
+        : `❌ Need ${remaining5} tickets (${perDay5} per day) to reach`
+    }</p>`;
+
+    document.getElementById("result").innerHTML = output;
+  }
 });
