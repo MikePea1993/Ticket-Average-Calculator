@@ -54,51 +54,75 @@ document.getElementById("calculateBtn").addEventListener("click", function () {
 
     document.getElementById("result").innerHTML = output;
   } else {
-    // For current period, calculate days elapsed since start
+    // For current period, calculate exact days elapsed since start
+    const msPerDay = 1000 * 60 * 60 * 24;
     const daysUntilNow = Math.max(
       1,
-      Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24))
+      Math.floor((currentDate - startDate) / msPerDay)
     );
-    const workingDays = Math.max(1, daysUntilNow - loa);
-    const remainingDays = Math.max(1, STANDARD_MONTH_DAYS - daysUntilNow);
+    const workingDays = Math.max(1, daysUntilNow);
+    const remainingDays = STANDARD_MONTH_DAYS - daysUntilNow;
 
     // Calculate current average based on working days so far
     const average = tickets / workingDays;
     const [zoneClass, zoneName] = getPerformanceZone(average);
 
+    // Calculate target rates
+    const rate3 = 3;
+    const rate4_2 = 4.2;
+    const rate5 = 5;
+
     // Calculate total tickets needed for whole month
-    const target3 = 3 * (STANDARD_MONTH_DAYS - loa);
-    const target4_2 = 4.2 * (STANDARD_MONTH_DAYS - loa);
-    const target5 = 5 * (STANDARD_MONTH_DAYS - loa);
+    const target3 = rate3 * (STANDARD_MONTH_DAYS - loa);
+    const target4_2 = rate4_2 * (STANDARD_MONTH_DAYS - loa);
+    const target5 = rate5 * (STANDARD_MONTH_DAYS - loa);
 
     // Calculate remaining tickets needed
     const remaining3 = Math.ceil(target3 - tickets);
     const remaining4_2 = Math.ceil(target4_2 - tickets);
     const remaining5 = Math.ceil(target5 - tickets);
 
-    // Calculate tickets per day needed
-    const perDay3 = Math.ceil(remaining3 / remainingDays);
-    const perDay4_2 = Math.ceil(remaining4_2 / remainingDays);
-    const perDay5 = Math.ceil(remaining5 / remainingDays);
+    // Calculate required daily rates for remaining days
+    const requiredDaily3 = remaining3 / remainingDays;
+    const requiredDaily4_2 = remaining4_2 / remainingDays;
+    const requiredDaily5 = remaining5 / remainingDays;
 
     let output = `<h3>Results for ${name}</h3>`;
     output += `<p class="${zoneClass}">Current Average: ${average.toFixed(
       2
     )} tickets/day (${zoneName} Zone)</p>`;
+
+    // 3.0 average output
     output += `<p>3.0 average: ${
-      tickets >= target3
-        ? `✅ Secured!`
-        : `❌ Need ${remaining3} tickets (${perDay3} per day) to reach`
+      average >= rate3
+        ? `✅ Need ${Math.max(0, requiredDaily3).toFixed(
+            2
+          )} tickets/day to maintain average`
+        : `❌ Need ${remaining3} tickets (${requiredDaily3.toFixed(
+            2
+          )} per day) to reach`
     }</p>`;
+
+    // 4.2 average output
     output += `<p>4.2 average: ${
-      tickets >= target4_2
-        ? `✅ Secured!`
-        : `❌ Need ${remaining4_2} tickets (${perDay4_2} per day) to reach`
+      average >= rate4_2
+        ? `✅ Need ${Math.max(0, requiredDaily4_2).toFixed(
+            2
+          )} tickets/day to maintain average`
+        : `❌ Need ${remaining4_2} tickets (${requiredDaily4_2.toFixed(
+            2
+          )} per day) to reach`
     }</p>`;
+
+    // 5.0 average output
     output += `<p>5.0 average: ${
-      tickets >= target5
-        ? `✅ Secured!`
-        : `❌ Need ${remaining5} tickets (${perDay5} per day) to reach`
+      average >= rate5
+        ? `✅ Need ${Math.max(0, requiredDaily5).toFixed(
+            2
+          )} tickets/day to maintain average`
+        : `❌ Need ${remaining5} tickets (${requiredDaily5.toFixed(
+            2
+          )} per day) to reach`
     }</p>`;
 
     document.getElementById("result").innerHTML = output;
